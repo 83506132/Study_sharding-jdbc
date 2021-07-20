@@ -1,0 +1,39 @@
+server:
+  port: 8001
+  servlet:
+    context-path: /simple
+spring:
+  application:
+    name: sharding-simple
+  main:
+    allow-bean-definition-overriding: true
+  shardingsphere:
+    datasource:
+      names: order1
+      order1:
+        type: com.zaxxer.hikari.HikariDataSource
+        driver-class-name: com.mysql.cj.jdbc.Driver
+        jdbc-url: jdbc:mysql://localhost:3306/order_db
+        username: root
+        password: 123456
+        max-active: 16
+    sharding:
+      tables:
+        t_order:
+          actualDataNodes: order1.t_order_$->{1..2}
+          keyGenerator:
+            type: SNOWFLAKE
+            column: order_id
+          tableStrategy:
+            inline:
+              shardingColumn: order_id
+              algorithmExpression: t_order_$->{order_id%2 +1}
+    props:
+      sql:
+        show: true
+mybatis:
+  configuration:
+    map-underscore-to-camel-case: true
+logging:
+  level:
+    root: debug

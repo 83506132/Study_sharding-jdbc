@@ -1,0 +1,61 @@
+server:
+  port: 8002
+spring:
+  application:
+    name: medium
+  shardingsphere:
+    datasource:
+      names: order1,order2,user,users1
+      user: #主库
+        password: 123456
+        username: root
+        type: com.zaxxer.hikari.HikariDataSource
+        jdbc-url: jdbc:mysql://localhost:3306/user_db
+      users1: #user的从库
+        password: 123456
+        username: root
+        type: com.zaxxer.hikari.HikariDataSource
+        jdbc-url: jdbc:mysql://localhost:3306/user_db
+      order1:
+        password: 123456
+        username: root
+        type: com.zaxxer.hikari.HikariDataSource
+        jdbc-url: jdbc:mysql://localhost:3306/order_db_1
+      order2:
+        password: 123456
+        username: root
+        type: com.zaxxer.hikari.HikariDataSource
+        jdbc-url: jdbc:mysql://localhost:3306/order_db_2
+    props:
+      sql:
+        show: true
+    sharding:
+      tables: #表配置
+        t_user:
+          actualDataNodes: userMs.t_user #总支节点
+          keyGenerator:
+            type: SNOWFLAKE
+            column: user_id
+#          tableStrategy: #具体选择那个表的
+#            inline:
+#              shardingColumn: order_id
+#              algorithmExpression: t_user
+        t_order:
+          actualDataNodes: order$->{1..2}.t_order_$->{1..2}
+          keyGenerator:
+            type: SNOWFLAKE
+            column: order_id
+          tableStrategy: #具体选择那个表的
+            inline:
+              shardingColumn: order_id
+              algorithmExpression: t_order_$->{order_id %2 +1}
+          databaseStrategy: #具体选择那个库的
+            inline:
+              shardingColumn: user_id
+              algorithmExpression: order$->{user_id % 2 +1}
+      broadcastTables: #公共表
+        - t_dict
+      master-slave-rules: #主从 读写分离
+        userMs:
+          masterDataSourceName: user #主节点
+          slaveDataSourceNames: users1 #从节点

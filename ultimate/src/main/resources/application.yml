@@ -1,0 +1,98 @@
+server:
+  port: 8001
+spring:
+  application:
+    name: ultimate
+  shardingsphere:
+    props:
+      sql:
+        show: true
+    datasource:
+      names: p1,p2,s1,ps1,ps2,ss1
+      p1:
+        type: com.zaxxer.hikari.HikariDataSource
+        driver-class-name: com.mysql.cj.jdbc.Driver
+        jdbc-url: jdbc:mysql://localhost:3306/product_db1
+        password: root
+        username: 123456
+      p2:
+        type: com.zaxxer.hikari.HikariDataSource
+        driver-class-name: com.mysql.cj.jdbc.Driver
+        jdbc-url: jdbc:mysql://localhost:3306/product_db2
+        password: root
+        username: 123456
+      s1:
+        type: com.zaxxer.hikari.HikariDataSource
+        driver-class-name: com.mysql.cj.jdbc.Driver
+        jdbc-url: jdbc:mysql://localhost:3306/store_db
+        password: root
+        username: 123456
+      ps1:
+        type: com.zaxxer.hikari.HikariDataSource
+        driver-class-name: com.mysql.cj.jdbc.Driver
+        jdbc-url: jdbc:mysql://localhost:3306/product_db1
+        password: root
+        username: 123456
+      ps2:
+        type: com.zaxxer.hikari.HikariDataSource
+        driver-class-name: com.mysql.cj.jdbc.Driver
+        jdbc-url: jdbc:mysql://localhost:3306/product_db2
+        password: root
+        username: 123456
+      ss1:
+        type: com.zaxxer.hikari.HikariDataSource
+        driver-class-name: com.mysql.cj.jdbc.Driver
+        jdbc-url: jdbc:mysql://localhost:3306/store_db
+        password: root
+        username: 123456
+    sharding:
+      tables:
+        # 配置绑定主要解决:笛卡尔积
+        bindingTables:
+          - product_info
+          - product_describe
+        product_info:
+          # 笛卡尔积:主要是乘基结果
+          actualDataNodes: p$->{1..2}Ms.product_info$->{1..2}
+          keyGenerator:
+            type: SNOWFLAKE
+            column: product_info_id
+          databaseStrategy:
+            inline:
+              shardingColumn: store_info_id
+              algorithmExpression: p$->{store_info_id  % 2 + 1}Ms
+          tableStrategy:
+            inline:
+              shardingColumn: product_info_id
+              algorithmExpression: product_info$->{product_id % 2 + 1}
+        product_describe:
+          # 笛卡尔积:主要是乘基结果
+          actualDataNodes: p$->{1..2}Ms.product_describe$->{1..2}
+          keyGenerator:
+            type: SNOWFLAKE
+            column: id
+          databaseStrategy:
+            inline:
+              shardingColumn: store_info_id
+              algorithmExpression: p$->{store_info_id  % 2 + 1}Ms
+          tableStrategy:
+            inline:
+              shardingColumn: product_info_id
+              algorithmExpression: product_describe$->{product_id % 2 + 1}
+        store_info:
+          actualDataNodes: sMs.store_info
+          keyGenerator:
+            type: SNOWFLAKE
+            column: id
+      master-slave-rules:
+        sMs:
+          masterDataSourceName: s1
+          slaveDataSourceNames: ss1
+        p1Ms:
+          masterDataSourceName: p1
+          slaveDataSourceNames: ps1
+        p2Ms:
+          masterDataSourceName: p2
+          slaveDataSourceNames: ps2
+      broadcast-tables:
+        - region
