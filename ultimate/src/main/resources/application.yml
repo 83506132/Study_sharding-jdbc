@@ -13,72 +13,68 @@ spring:
         type: com.zaxxer.hikari.HikariDataSource
         driver-class-name: com.mysql.cj.jdbc.Driver
         jdbc-url: jdbc:mysql://localhost:3306/product_db1
-        password: root
-        username: 123456
+        password: 123456
+        username: root
       p2:
         type: com.zaxxer.hikari.HikariDataSource
         driver-class-name: com.mysql.cj.jdbc.Driver
         jdbc-url: jdbc:mysql://localhost:3306/product_db2
-        password: root
-        username: 123456
+        password: 123456
+        username: root
       s1:
         type: com.zaxxer.hikari.HikariDataSource
         driver-class-name: com.mysql.cj.jdbc.Driver
         jdbc-url: jdbc:mysql://localhost:3306/store_db
-        password: root
-        username: 123456
+        password: 123456
+        username: root
       ps1:
         type: com.zaxxer.hikari.HikariDataSource
         driver-class-name: com.mysql.cj.jdbc.Driver
         jdbc-url: jdbc:mysql://localhost:3306/product_db1
-        password: root
-        username: 123456
+        password: 123456
+        username: root
       ps2:
         type: com.zaxxer.hikari.HikariDataSource
         driver-class-name: com.mysql.cj.jdbc.Driver
         jdbc-url: jdbc:mysql://localhost:3306/product_db2
-        password: root
-        username: 123456
+        password: 123456
+        username: root
       ss1:
         type: com.zaxxer.hikari.HikariDataSource
         driver-class-name: com.mysql.cj.jdbc.Driver
         jdbc-url: jdbc:mysql://localhost:3306/store_db
-        password: root
-        username: 123456
+        password: 123456
+        username: root
     sharding:
+      default-database-strategy:
+        inline:
+          sharding-column: store_info_id
+          algorithm-expression: p$->{store_info_id  % 2 + 1}Ms
+      # 配置绑定主要解决:笛卡尔积
+      bindingTables:
+        - product_info
+        - product_describe
       tables:
-        # 配置绑定主要解决:笛卡尔积
-        bindingTables:
-          - product_info
-          - product_describe
         product_info:
           # 笛卡尔积:主要是乘基结果
           actualDataNodes: p$->{1..2}Ms.product_info$->{1..2}
           keyGenerator:
             type: SNOWFLAKE
             column: product_info_id
-          databaseStrategy:
-            inline:
-              shardingColumn: store_info_id
-              algorithmExpression: p$->{store_info_id  % 2 + 1}Ms
           tableStrategy:
             inline:
               shardingColumn: product_info_id
-              algorithmExpression: product_info$->{product_id % 2 + 1}
+              algorithmExpression: product_info$->{product_info_id % 2 + 1}
         product_describe:
           # 笛卡尔积:主要是乘基结果
           actualDataNodes: p$->{1..2}Ms.product_describe$->{1..2}
           keyGenerator:
             type: SNOWFLAKE
             column: id
-          databaseStrategy:
-            inline:
-              shardingColumn: store_info_id
-              algorithmExpression: p$->{store_info_id  % 2 + 1}Ms
           tableStrategy:
             inline:
               shardingColumn: product_info_id
-              algorithmExpression: product_describe$->{product_id % 2 + 1}
+              algorithmExpression: product_describe$->{product_info_id % 2 + 1}
         store_info:
           actualDataNodes: sMs.store_info
           keyGenerator:
